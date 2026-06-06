@@ -1,0 +1,6 @@
+fastapi
+sqlalchemy
+python-jose
+passlib==1.7.4
+uvicorn
+python-dotenv
