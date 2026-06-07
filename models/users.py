@@ -37,3 +37,7 @@ class User(BaseModel):
         "Workspace",
         back_populates="owner"
     )
+    created_channels = relationship(
+        "Channel",
+        back_populates="creator"
+    )

@@ -16,7 +16,7 @@ def register_user(data:RegisterRequest,db:Session):
         User.email == data.email
     ).first()
     if existing_user:
-        raise ValueError("Email alredy registed")
+        raise ValueError("Email already registered")
     user = User(
         username= data.username,
         email= data.email,

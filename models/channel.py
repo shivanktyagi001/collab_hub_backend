@@ -1,6 +1,6 @@
 from models.base import BaseModel
 from sqlalchemy.orm import Mapped,mapped_column,relationship
-from sqlalchemy import String,INTEGER,ForeignKey
+from sqlalchemy import String,INTEGER,ForeignKey,Boolean
 class Channel(BaseModel):
     __tablename__ = "channels"
     workspace_id:Mapped[int]=mapped_column(
@@ -12,6 +12,21 @@ class Channel(BaseModel):
     desc : Mapped[str] = mapped_column(
         String(300)
     )
-    created_by:Mapped[str] = mapped_column(
+    created_by:Mapped[int] = mapped_column(
         ForeignKey("users.id")
     )
+    is_private:Mapped[bool] = mapped_column(
+        Boolean,
+        default=False
+    )
+    workspace = relationship(
+        "Workspace",
+        back_populates="channels"
+    )
+    creator = relationship(
+        "User",
+        back_populates="created_channels"
+    )
+    
+    
+    

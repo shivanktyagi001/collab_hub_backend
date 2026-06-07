@@ -24,6 +24,11 @@ class Workspace(BaseModel):
         "User",
         back_populates="workspace"
     )
+    channels = relationship(
+        "Channel",
+        back_populates="workspace",
+        cascade="all,delete-orphan"
+    )
 
 
     

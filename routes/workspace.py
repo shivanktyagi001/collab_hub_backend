@@ -31,7 +31,7 @@ def get_my_workspace_route(db:Session=Depends(get_db),current_user:User=Depends(
         return get_my_workspace(db,current_user)
     except ValueError as e:
         raise HTTPException(
-            status_code=200,
+            status_code=400,
             detail=str(e)
         )
     
@@ -41,7 +41,7 @@ def get_workspace_by_id_route(worspace_id:int,db:Session=Depends(get_db),current
         return get_workspace_by_id(db,current_user,worspace_id)
     except ValueError as e:
         raise HTTPException(
-            status_code=200,
+            status_code=400,
             detail=str(e)
         )
     
@@ -51,7 +51,7 @@ def update_worspace(workspace_id:int,workspace_data:WorkspaceUpdate,db:Session=D
         return update_workspace(db,current_user,workspace_id,workspace_data)
     except ValueError as e:
         raise HTTPException(
-            status_code=200,
+            status_code=400,
             detail=str(e)
         )
     
