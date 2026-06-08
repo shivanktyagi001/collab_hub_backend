@@ -27,10 +27,10 @@ def create_workspace(db:Session,current_user:User,workspace_data:WorkspaceCreate
     db.refresh(workspace)
     return workspace
 
-def get_my_workspace(db:Session,curr_user:User):
+def get_my_workspace(db: Session, curr_user: User, limit: int = 10, offset: int = 0):
     myWorkspaces = db.query(Workspace).join(WorkspaceMember).filter(
         WorkspaceMember.user_id == curr_user.id
-    ).all()
+    ).limit(limit).offset(offset).all()
     if not myWorkspaces:
         raise ValueError("No Workspace found")
     return myWorkspaces

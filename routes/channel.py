@@ -68,14 +68,23 @@ def create_channel_route(
 )
 def list_channels_route(
     workspace_id: int,
+    limit: int = 10,
+    offset: int = 0,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     try:
+        if limit <= 0 or limit > 100:
+            limit = 10
+        if offset < 0:
+            offset = 0
+        
         return list_channels(
             db,
             workspace_id,
-            current_user
+            current_user,
+            limit,
+            offset
         )
     except ValueError as e:
         raise HTTPException(

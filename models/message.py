@@ -1,20 +1,37 @@
 from models.base import BaseModel
 from sqlalchemy.orm import Mapped,mapped_column,relationship
-from sqlalchemy import ForeignKey,String
+from sqlalchemy import ForeignKey,String,Text,Boolean
 
-class Messages(BaseModel):
+class Message(BaseModel):
     __tablename__ = "messages"
     channel_id : Mapped[int]= mapped_column(
-        ForeignKey("channels.id")
+        ForeignKey("channels.id"),
+        nullable=False
     )
     sender_id : Mapped[int] = mapped_column(
-        ForeignKey("users.id")
+        ForeignKey("users.id"),
+        nullable=False
     )
-    parent_message_id :Mapped[int]=mapped_column(
-        ForeignKey("messages.id")
-    )
+    
     content:Mapped[str]=mapped_column(
-        String,
+        Text,
+        nullable=False
+    )
+    edited:Mapped[bool]=mapped_column(
+        Boolean,
+        default=False
+    )
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean,
+        default=False
+    )
+    channel = relationship(
+        "Channel",
+        back_populates="messages"
+    )
+    sender = relationship(
+        "User",
+        back_populates="messages"
     )
     
 

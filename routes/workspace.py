@@ -26,9 +26,19 @@ def create_workspace_route(workspcae_data:WorkspaceCreate,db:Session=Depends(get
         )
     
 @router.get("/",response_model=List[WorkspaceResponse])
-def get_my_workspace_route(db:Session=Depends(get_db),current_user:User=Depends(get_current_user)):
+def get_my_workspace_route(
+    limit: int = 10,
+    offset: int = 0,
+    db: Session=Depends(get_db),
+    current_user: User=Depends(get_current_user)
+):
     try:
-        return get_my_workspace(db,current_user)
+        if limit <= 0 or limit > 100:
+            limit = 10
+        if offset < 0:
+            offset = 0
+        
+        return get_my_workspace(db, current_user, limit, offset)
     except ValueError as e:
         raise HTTPException(
             status_code=400,
@@ -92,8 +102,19 @@ def invite_member_route(workspace_id:int,request:InviteMemberRequest,db:Session=
 
 
 @router.get("/{workspace_id}/members",response_model=List[WorkspaceMemberResponse])
-def list_workspace_members_route(workspace_id:int,db:Session=Depends(get_db),membership=Depends(require_workspace_member)):
-    return list_workspace_members(db,workspace_id)
+def list_workspace_members_route(
+    workspace_id: int,
+    limit: int = 10,
+    offset: int = 0,
+    db: Session=Depends(get_db),
+    membership=Depends(require_workspace_member)
+):
+    if limit <= 0 or limit > 100:
+        limit = 10
+    if offset < 0:
+        offset = 0
+    
+    return list_workspace_members(db, workspace_id, limit, offset)
 
 @router.delete("/{workspace_id}/members/{user_id}")
 def remove_member_route(

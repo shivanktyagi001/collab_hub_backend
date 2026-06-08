@@ -30,7 +30,7 @@ def create_channel(db:Session,workspace_id:int,request:CreateChannelRequest,curr
     db.refresh(channel)
     return channel
 
-def list_channels(db:Session,workspace_id:int,curr_user:User):
+def list_channels(db: Session, workspace_id: int, curr_user: User, limit: int = 10, offset: int = 0):
     member = db.query(WorkspaceMember).filter(
         WorkspaceMember.workspace_id == workspace_id,
         WorkspaceMember.user_id == curr_user.id
@@ -44,12 +44,12 @@ def list_channels(db:Session,workspace_id:int,curr_user:User):
     ]:
         return db.query(Channel).filter(
             Channel.workspace_id == workspace_id
-        ).all()
+        ).limit(limit).offset(offset).all()
 
     return db.query(Channel).filter(
         Channel.workspace_id == workspace_id,
         Channel.is_private == False
-    ).all()
+    ).limit(limit).offset(offset).all()
 
 def get_channel_by_id(db:Session,channel_id:int,curr_user:User):
     channel = db.query(Channel).filter(Channel.id == channel_id).first()

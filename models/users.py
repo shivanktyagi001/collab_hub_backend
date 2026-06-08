@@ -41,3 +41,7 @@ class User(BaseModel):
         "Channel",
         back_populates="creator"
     )
+    messages = relationship(
+        "Message",
+        back_populates="sender"
+    )

@@ -24,7 +24,9 @@ def invite_member(db:Session,workspace_id:int,request:InviteMemberRequest):
 
 def list_workspace_members(
     db: Session,
-    workspace_id: int
+    workspace_id: int,
+    limit: int = 10,
+    offset: int = 0
 ):
     members = (
         db.query(
@@ -42,6 +44,8 @@ def list_workspace_members(
         .filter(
             WorkspaceMember.workspace_id == workspace_id
         )
+        .limit(limit)
+        .offset(offset)
         .all()
     )
 

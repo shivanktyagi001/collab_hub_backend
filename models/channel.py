@@ -27,6 +27,10 @@ class Channel(BaseModel):
         "User",
         back_populates="created_channels"
     )
-    
+    messages = relationship(
+        "Message",
+        back_populates="channel",
+        cascade="all,delete-orphan"
+    )
     
     
