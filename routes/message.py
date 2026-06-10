@@ -11,7 +11,8 @@ from core.dependencies import (
     get_db,
     get_current_user
 )
-
+from websocket.connection_manager import manager
+from websocket.events import message_created_event
 from models.users import User
 
 from schemas.message import (
@@ -38,7 +39,7 @@ router = APIRouter(
     response_model=MessageResponse,
     status_code=status.HTTP_201_CREATED
 )
-def send_message_route(
+async def send_message_route(
     channel_id: int,
     request: CreateMessageRequest,
     db: Session = Depends(get_db),
@@ -46,12 +47,14 @@ def send_message_route(
 ):
     """Create a new message in a channel"""
     try:
-        return create_message(
+        message =  create_message(
             db,
             channel_id,
             request,
             current_user
         )
+        await manager.broadcast(channel_id,message_created_event(message))
+        return message
     except HTTPException:
         raise
     except Exception as e:

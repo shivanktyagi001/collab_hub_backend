@@ -5,6 +5,7 @@ from routes.auth import router as auth_router
 from routes.workspace import router as worker_route
 from routes.channel import router as channel_route
 from routes.message import router as message_route
+from websocket.chat_socket import router as websocket_route
 print(Base.metadata.tables.keys())
 Base.metadata.create_all(bind=engine)
 app = FastAPI()
@@ -13,4 +14,4 @@ app.include_router(auth_router)
 app.include_router(worker_route)
 app.include_router(channel_route)
 app.include_router(message_route)
-
+app.include_router(websocket_route)
