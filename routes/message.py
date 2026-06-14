@@ -13,6 +13,7 @@ from core.dependencies import (
 )
 from websocket.connection_manager import manager
 from websocket.events import message_created_event
+from websocket.redis_pubsub import publish_event
 from models.users import User
 
 from schemas.message import (
@@ -53,7 +54,7 @@ async def send_message_route(
             request,
             current_user
         )
-        await manager.broadcast(channel_id,message_created_event(message))
+        await publish_event(channel_id, message_created_event(message))
         return message
     except HTTPException:
         raise
