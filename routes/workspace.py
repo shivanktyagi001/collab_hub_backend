@@ -9,16 +9,21 @@ from models.users import User
 from models.workspace_member import WorkspaceRole,WorkspaceMember
 from schemas.workspace_member import InviteMemberRequest,WorkspaceMemberResponse,WorkspaceMemberCreateResponse
 from services.workspace_member import invite_member,list_workspace_members,remove_members
-
+from core.cache import cache_get_json,cache_set_json,cache_delete_pattern
 router = APIRouter(
     prefix="/workspaces",
     tags=["Workspaces"]
 )
 
 @router.post("/create_workspace",response_model=WorkspaceResponse)
-def create_workspace_route(workspcae_data:WorkspaceCreate,db:Session=Depends(get_db),current_user:User=Depends(get_current_user)):
+async def create_workspace_route(workspcae_data:WorkspaceCreate,db:Session=Depends(get_db),current_user:User=Depends(get_current_user)):
     try:
-        return create_workspace(db,current_user,workspcae_data)
+        workspace= create_workspace(db,current_user,workspcae_data)
+        await cache_delete_pattern(
+            f"workspaces:list:{current_user.id}:*"
+        )
+        return workspace
+
     except ValueError as e:
         raise HTTPException(
             status_code=400,
@@ -26,7 +31,7 @@ def create_workspace_route(workspcae_data:WorkspaceCreate,db:Session=Depends(get
         )
     
 @router.get("/",response_model=List[WorkspaceResponse])
-def get_my_workspace_route(
+async def get_my_workspace_route(
     limit: int = 10,
     offset: int = 0,
     db: Session=Depends(get_db),
@@ -38,7 +43,22 @@ def get_my_workspace_route(
         if offset < 0:
             offset = 0
         
-        return get_my_workspace(db, current_user, limit, offset)
+        cache_key = f"workspaces:list:{current_user.id}:{limit}:{offset}"
+        cache = await cache_get_json(cache_key)
+        if cache is not None:
+            return cache
+        
+        workspace = get_my_workspace(
+            db,current_user,limit,offset
+        )
+        payload = [
+            WorkspaceResponse.model_validate(w).model_dump(mode="json")
+            for w in workspace
+        ]
+        await cache_set_json(
+            cache_key,payload,ttl_seconds=180,
+        )
+        return workspace
     except ValueError as e:
         raise HTTPException(
             status_code=400,
@@ -46,9 +66,34 @@ def get_my_workspace_route(
         )
     
 @router.get("/{workspace_id}",response_model=WorkspaceResponse)
-def get_workspace_by_id_route(worspace_id:int,db:Session=Depends(get_db),current_user:User= Depends(get_current_user)):
+async def get_workspace_by_id_route(workspace_id:int,db:Session=Depends(get_db),current_user:User= Depends(get_current_user)):
     try:
-        return get_workspace_by_id(db,current_user,worspace_id)
+        cache_key = f"workspace:{current_user.id}:{workspace_id}"
+
+        cached = await cache_get_json(cache_key)
+
+        if cached is not None:
+            return cached
+
+        workspace = get_workspace_by_id(
+            db,
+            current_user,
+            workspace_id,
+        )
+
+        payload = (
+            WorkspaceResponse
+            .model_validate(workspace)
+            .model_dump(mode="json")
+        )
+
+        await cache_set_json(
+            cache_key,
+            payload,
+            ttl_seconds=300,
+        )
+
+        return workspace
     except ValueError as e:
         raise HTTPException(
             status_code=400,
@@ -56,9 +101,16 @@ def get_workspace_by_id_route(worspace_id:int,db:Session=Depends(get_db),current
         )
     
 @router.patch("/update/{workspace_id}",response_model=WorkspaceResponse)
-def update_worspace(workspace_id:int,workspace_data:WorkspaceUpdate,db:Session=Depends(get_db),current_user:User=Depends(get_current_user)):
+async def update_worspace(workspace_id:int,workspace_data:WorkspaceUpdate,db:Session=Depends(get_db),current_user:User=Depends(get_current_user)):
     try:
-        return update_workspace(db,current_user,workspace_id,workspace_data)
+        workspace= update_workspace(db,current_user,workspace_id,workspace_data)
+        await cache_delete_pattern(
+            f"workspace:{current_user.id}:{workspace_id}"
+        )
+        await cache_delete_pattern(
+            f"workspaces:list:{current_user.id}:*"
+        )
+        return workspace
     except ValueError as e:
         raise HTTPException(
             status_code=400,
@@ -66,14 +118,22 @@ def update_worspace(workspace_id:int,workspace_data:WorkspaceUpdate,db:Session=D
         )
     
 @router.delete("/delete/{workspace_id}")
-def delete_workspace_route(workspace_id:int,db:Session=Depends(get_db),membership:WorkspaceMember=Depends(require_workspace_member)):
+async def delete_workspace_route(workspace_id:int,db:Session=Depends(get_db),membership:WorkspaceMember=Depends(require_workspace_member)):
     if  membership.role != WorkspaceRole.OWNER:
         raise HTTPException(
             status_code=403,
             detail="Only the owner can delete the workspace"
         )
     try:
-        return delete_workspace(db,workspace_id)
+        result= delete_workspace(db,workspace_id)
+        await cache_delete_pattern(
+            f"workspace:{membership.user_id}:{workspace_id}"
+        )
+
+        await cache_delete_pattern(
+            f"workspaces:list:{membership.user_id}:*"
+        )
+        return result
     except ValueError as e:
         raise HTTPException(
                 status_code=404,
