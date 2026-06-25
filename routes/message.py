@@ -6,14 +6,13 @@ from fastapi import (
 )
 
 from sqlalchemy.orm import Session
-
+from websocket.redis_pubsub import publish_event
 from core.dependencies import (
     get_db,
     get_current_user
 )
 from websocket.connection_manager import manager
 from websocket.events import message_created_event
-from websocket.redis_pubsub import publish_event
 from models.users import User
 
 from schemas.message import (

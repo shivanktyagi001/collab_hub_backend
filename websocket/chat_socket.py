@@ -1,11 +1,11 @@
 from fastapi import APIRouter,WebSocket,Depends,status
 from websocket.connection_manager import manager
+from websocket.redis_pubsub import publish_event, ensure_channel_subscription, stop_channel_subscription
 from websocket.events import (
     message_created_event,typing_started_event,typing_stopped_event,
     user_offline_event,user_online_event
 
 )
-from websocket.redis_pubsub import publish_event, ensure_channel_subscription, stop_channel_subscription
 from core.dependencies import get_db
 from core.websocket_auth import get_ws_current_user
 from services.message_service import create_message
@@ -30,8 +30,9 @@ async def websocket_endpoint(websocket:WebSocket,channel_id:int,db:Session=Depen
         await manager.connect(channel_id,websocket)
         await ensure_channel_subscription(channel_id)
         become_online = presence_manager.connect(user.id)
+        
         if become_online:
-            await publish_event(channel_id,user_online_event(user))
+            await publish_event(channel_id, user_online_event(user))
         while True:
             data = await websocket.receive_text()
             try:
@@ -59,9 +60,9 @@ async def websocket_endpoint(websocket:WebSocket,channel_id:int,db:Session=Depen
                     # Broadcast to all connected clients
                     await publish_event(channel_id, message_created_event(message))
                 elif event == "typing_started":
-                    await publish_event(channel_id,typing_started_event(user))
+                    await publish_event(channel_id, typing_started_event(user))
                 elif event == "typing_stopped":
-                    await publish_event(channel_id,typing_stopped_event(user))
+                    await publish_event(channel_id, typing_stopped_event(user))
                 else:
                     await websocket.send_json({
                         "event": "error",
@@ -86,11 +87,10 @@ async def websocket_endpoint(websocket:WebSocket,channel_id:int,db:Session=Depen
 
         try:
             manager.disconnect(channel_id, websocket)
+            if channel_id not in manager.active_connection:
+                await stop_channel_subscription(channel_id)
         except (KeyError, ValueError):
             pass
-
-        if channel_id not in manager.active_connection:
-            await stop_channel_subscription(channel_id)
 
         try:
             await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
