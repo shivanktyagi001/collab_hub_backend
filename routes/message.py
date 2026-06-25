@@ -4,7 +4,7 @@ from fastapi import (
     HTTPException,
     status
 )
-
+from core.rate_limiter import rate_limit_send_message
 from sqlalchemy.orm import Session
 from websocket.redis_pubsub import publish_event
 from core.dependencies import (
@@ -47,6 +47,7 @@ async def send_message_route(
 ):
     """Create a new message in a channel"""
     try:
+        await rate_limit_send_message(current_user.id)
         message =  create_message(
             db,
             channel_id,

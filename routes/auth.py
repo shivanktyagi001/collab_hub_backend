@@ -1,5 +1,10 @@
 from fastapi import APIRouter,Depends,HTTPException
+from fastapi import Request
 
+from core.rate_limiter import (
+    rate_limit_register,
+    rate_limit_login,
+)
 from sqlalchemy.orm import Session
 from database.dependency import get_db
 from schemas.auth import RegisterRequest,LoginRequest,UserResponse,TokenResponse,RefreshRequest,LogoutRequest
@@ -12,12 +17,14 @@ router = APIRouter(
 )
 
 @router.post("/register", response_model=UserResponse,)
-def register(
+async def register(
+    request: Request,
     data:RegisterRequest,
     db:Session=Depends(get_db),
 
 ):
     try:
+        await rate_limit_register(request)
         return register_user(data,db)
     except ValueError as e:
         raise HTTPException(
@@ -27,9 +34,10 @@ def register(
     
 
 @router.post("/login",response_model=TokenResponse)
-def login(form_data:OAuth2PasswordRequestForm=Depends(),
+async def login(request: Request,form_data:OAuth2PasswordRequestForm=Depends(),
           db:Session=Depends(get_db)):
     try:
+        await rate_limit_login(request)
         data = LoginRequest(
            email= form_data.username,
             password=form_data.password
