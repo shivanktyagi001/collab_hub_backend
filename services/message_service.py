@@ -4,7 +4,6 @@ from sqlalchemy.exc import SQLAlchemyError
 from models.message import Message
 from models.channel import Channel
 from models.users import User
-
 from schemas.message import CreateMessageRequest, UpdateMessageRequest
 
 
@@ -37,6 +36,7 @@ def create_message(
             sender_id=curr_user.id,
             content=request.content.strip()
         )
+       
         db.add(message)
         db.commit()
         db.refresh(message)

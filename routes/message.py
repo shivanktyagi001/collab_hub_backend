@@ -14,7 +14,7 @@ from core.dependencies import (
 from websocket.connection_manager import manager
 from websocket.events import message_created_event
 from models.users import User
-
+from core.producer import publish_message
 from schemas.message import (
     CreateMessageRequest,
     UpdateMessageRequest,
@@ -55,6 +55,14 @@ async def send_message_route(
             current_user
         )
         await publish_event(channel_id, message_created_event(message))
+        await publish_message(
+            "analytics_queue",
+            {
+                "message_id": message.id,
+                "channel_id": channel_id,
+                "sender_id": current_user.id,
+            }
+        )
         return message
     except HTTPException:
         raise
