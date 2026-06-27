@@ -19,7 +19,7 @@ async def cache_delete(*keys:str):
 
 async def cache_delete_pattern(pattern:str):
     keys=[]
-    async for key in redis_client.scan_iter(pattern):
+    async for key in redis_client.scan_iter(pattern):#if doenot ue redis stop and first give me those keys harmful
         key_str = key.decode("utf-8") if isinstance(key,bytes) else key
         keys.append(key_str)
 
