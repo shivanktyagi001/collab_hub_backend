@@ -9,7 +9,7 @@ async def connect_rabbitmq():
     global connection,channel
 
     connection = await aio_pika.connect_robust(RABBITMQ_URL)
-    channel = connection.channel()
+    channel = await connection.channel()
 
     await channel.set_qos(prefetch_count=10)
 
